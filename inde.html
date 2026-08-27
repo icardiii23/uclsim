@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Şampiyonlar Ligi — Maç Simülatörü</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #060a18;
+    --bg-deep: #03050e;
+    --panel: #0d1430;
+    --panel-raised: #121a3a;
+    --line: rgba(174,184,201,0.14);
+    --pitch: #12301f;
+    --pitch-line: #2e7d4f;
+    --silver: #aeb8c9;
+    --silver-dim: #6d7690;
+    --white: #f3f5f9;
+    --gold: #e4b94b;
+    --violet: #5b4fe0;
+    --violet-bright: #7a70ff;
+    --red-card: #e5484d;
+    --yellow-card: #f4c542;
+    --radius: 10px;
+    --ff-display: 'Oswald', sans-serif;
+    --ff-body: 'Work Sans', sans-serif;
+    --ff-mono: 'Space Mono', monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, rgba(91,79,224,0.18), transparent 60%),
+      radial-gradient(ellipse 700px 400px at 90% 10%, rgba(228,185,75,0.06), transparent 60%),
+      var(--bg-deep);
+    color: var(--white);
+    font-family: var(--ff-body);
+    min-height: 100vh;
+    padding: 32px 18px 60px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important;}
+  }
+
+  :focus-visible{outline: 2px solid var(--gold); outline-offset: 2px;}
+
+  .wrap{ max-width: 880px; margin: 0 auto; }
+
+  /* ---------- Header ---------- */
+  header{ text-align:center; margin-bottom: 30px; }
+  .kicker{
+    font-family: var(--ff-mono);
+    font-size: 11px;
+    letter-spacing: 0.35em;
+    color: var(--silver-dim);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  h1{
+    font-family: var(--ff-display);
+    font-weight: 700;
+    font-size: clamp(28px, 5.5vw, 44px);
+    letter-spacing: 0.02em;
+    margin: 0;
+    text-transform: uppercase;
+    color: var(--white);
+  }
+  h1 span{ color: var(--gold); }
+  .stars{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    margin-top: 14px; color: var(--silver-dim); font-size: 10px; letter-spacing: 0.3em;
+  }
+  .stars::before, .stars::after{
+    content:""; height:1px; width: 60px; background: linear-gradient(90deg, transparent, var(--line));
+  }
+  .stars::after{ background: linear-gradient(90deg, var(--line), transparent); }
+
+  /* ---------- Panels ---------- */
+  .panel{
+    background: linear-gradient(180deg, var(--panel-raised), var(--panel));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 18px;
+  }
+
+  /* ---------- Setup screen ---------- */
+  .setup-grid{
+    display:grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 16px;
+    align-items:center;
+  }
+  @media (max-width: 620px){
+    .setup-grid{ grid-template-columns: 1fr; }
+    .vs-divider{ order:2; margin: 4px auto; }
+    .team-slot:nth-of-type(1){order:1;}
+    .team-slot:nth-of-type(3){order:3;}
+  }
+  .team-slot{ text-align:center; }
+  .crest{
+    width: 74px; height: 74px; border-radius: 50%;
+    margin: 0 auto 12px;
+    display:flex; align-items:center; justify-content:center;
+    font-family: var(--ff-display); font-weight:700; font-size: 22px;
+    background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.12), transparent 60%), var(--bg);
+    border: 2px solid var(--line);
+    color: var(--gold);
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .team-slot.side-a .crest{ border-color: rgba(91,79,224,0.6); }
+  .team-slot.side-b .crest{ border-color: rgba(228,185,75,0.6); }
+  select{
+    width:100%;
+    background: var(--bg);
+    color: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: var(--ff-body);
+    font-size: 14px;
+    cursor:pointer;
+  }
+  select:hover{ border-color: var(--silver-dim); }
+  .team-meta{
+    margin-top: 10px; font-family: var(--ff-mono); font-size: 11px; color: var(--silver-dim);
+    display:flex; justify-content:center; gap: 12px;
+  }
+  .team-meta b{ color: var(--silver); font-weight:400; }
+
+  .vs-divider{
+    font-family: var(--ff-display); font-size: 15px; letter-spacing:0.1em;
+    color: var(--silver-dim); text-align:center;
+  }
+
+  .mode-row{
+    display:flex; align-items:center; justify-content:center; gap: 10px;
+    margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  .toggle-label{
+    display:flex; align-items:center; gap: 10px;
+    font-size: 13px; color: var(--silver); cursor:pointer;
+    font-family: var(--ff-body);
+  }
+  .switch{
+    width: 38px; height: 22px; border-radius: 20px; background: var(--bg);
+    border: 1px solid var(--line); position: relative; cursor:pointer; flex-shrink:0;
+    transition: background 0.2s ease;
+  }
+  .switch::after{
+    content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%;
+    background: var(--silver-dim); transition: transform 0.2s ease, background 0.2s ease;
+  }
+  .switch.on{ background: rgba(91,79,224,0.35); border-color: var(--violet-bright); }
+  .switch.on::after{ transform: translateX(16px); background: var(--violet-bright); }
+
+  .actions{ display:flex; justify-content:center; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
+  button{
+    font-family: var(--ff-display);
+    font-size: 14px; letter-spacing: 0.06em; text-transform: uppercase;
+    border-radius: 6px; padding: 13px 26px; cursor:pointer;
+    border: 1px solid transparent;
+    transition: transform 0.12s ease, filter 0.12s ease;
+  }
+  button:hover{ filter: brightness(1.08); }
+  button:active{ transform: scale(0.97); }
+  button:disabled{ opacity:0.4; cursor:not-allowed; }
+  .btn-primary{ background: linear-gradient(180deg, var(--violet-bright), var(--violet)); color: var(--white); box-shadow: 0 6px 20px rgba(91,79,224,0.35);}
+  .btn-ghost{ background: transparent; color: var(--silver); border-color: var(--line); }
+  .btn-gold{ background: linear-gradient(180deg, #f0cc6c, var(--gold)); color: #1a1200; }
+
+  .error-msg{ text-align:center; color: var(--red-card); font-size: 13px; font-family: var(--ff-mono); margin-top: 12px; min-height: 16px; }
+
+  /* ---------- Live screen ---------- */
+  #liveScreen, #resultScreen{ display:none; }
+
+  .scoreboard{
+    display:grid; grid-template-columns: 1fr auto 1fr;
+    align-items:center; gap: 14px; padding: 20px 10px;
+  }
+  .sb-team{ text-align:center; }
+  .sb-team .name{
+    font-family: var(--ff-display); font-size: clamp(14px,3vw,19px); text-transform:uppercase;
+    letter-spacing:0.03em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .sb-team .crest-sm{
+    width:44px; height:44px; border-radius:50%; margin: 0 auto 8px;
+    display:flex;align-items:center;justify-content:center;
+    background: var(--bg); border:2px solid var(--line); color: var(--gold);
+    font-family: var(--ff-display); font-weight:700; font-size: 14px;
+  }
+  .sb-mid{ text-align:center; }
+  .score{
+    font-family: var(--ff-mono); font-weight:700; font-size: clamp(30px,7vw,46px);
+    display:flex; align-items:center; gap: 10px; justify-content:center;
+    color: var(--white);
+  }
+  .score .digit{ display:inline-block; min-width: 0.9em; text-align:center; transition: transform 0.25s ease; }
+  .score .digit.pulse{ animation: goalPulse 0.6s ease; color: var(--gold); }
+  @keyframes goalPulse{
+    0%{ transform: scale(1); }
+    30%{ transform: scale(1.35); }
+    100%{ transform: scale(1); }
+  }
+  .clock{
+    font-family: var(--ff-mono); font-size: 12px; color: var(--silver-dim); margin-top: 6px;
+    letter-spacing: 0.08em;
+  }
+  .clock .dot{
+    display:inline-block; width:6px; height:6px; border-radius:50%; background: var(--red-card);
+    margin-right:6px; animation: blink 1.1s infinite;
+  }
+  .clock.stopped .dot{ background: var(--silver-dim); animation:none; }
+  @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+
+  /* ---------- Floodlight timeline (signature element) ---------- */
+  .timeline-wrap{ padding: 6px 4px 2px; }
+  .timeline-labels{
+    display:flex; justify-content:space-between; font-family: var(--ff-mono);
+    font-size: 10px; color: var(--silver-dim); margin-bottom: 8px;
+  }
+  .timeline{
+    position:relative; height: 34px; border-radius: 4px;
+    background: repeating-linear-gradient(90deg, var(--pitch) 0 34px, #0f2818 34px 68px);
+    border: 1px solid var(--line); overflow: visible;
+  }
+  .timeline::before{
+    content:""; position:absolute; inset:0; border-radius:4px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), transparent 40%);
+    pointer-events:none;
+  }
+  .beam{
+    position:absolute; top:0; left:0; height:100%; width:0%;
+    background: linear-gradient(90deg, rgba(228,185,75,0.0), rgba(228,185,75,0.28));
+    border-right: 2px solid var(--gold);
+    box-shadow: 0 0 14px rgba(228,185,75,0.55);
+    transition: width 0.35s linear;
+  }
+  .tl-marker{
+    position:absolute; top:50%; transform: translate(-50%,-50%); font-size: 13px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+    animation: markerPop 0.35s ease;
+  }
+  @keyframes markerPop{ from{ transform: translate(-50%,-50%) scale(0);} to{ transform: translate(-50%,-50%) scale(1);} }
+  .tl-marker.away{ top: 78%; }
+  .tl-marker.home{ top: 22%; }
+
+  /* ---------- Commentary feed ---------- */
+  .feed-title{
+    font-family: var(--ff-display); text-transform:uppercase; letter-spacing:0.08em;
+    font-size: 12px; color: var(--silver-dim); margin: 22px 0 10px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .feed-title::after{ content:""; flex:1; height:1px; background: var(--line); }
+  .feed{
+    max-height: 260px; overflow-y:auto; display:flex; flex-direction:column-reverse; gap:0;
+    padding-right: 4px;
+  }
+  .feed::-webkit-scrollbar{ width:6px; }
+  .feed::-webkit-scrollbar-thumb{ background: var(--line); border-radius:3px; }
+  .feed-item{
+    display:flex; gap: 12px; padding: 9px 4px; border-bottom: 1px solid var(--line);
+    font-size: 13.5px; line-height:1.5; animation: fadeIn 0.4s ease;
+    color: var(--silver);
+  }
+  .feed-item:last-child{ border-bottom:none; }
+  @keyframes fadeIn{ from{ opacity:0; transform: translateY(-4px);} to{opacity:1; transform:none;} }
+  .feed-item .min{
+    font-family: var(--ff-mono); font-size: 11px; color: var(--gold); flex-shrink:0; width:34px; padding-top:1px;
+  }
+  .feed-item.goal{ color: var(--white); }
+  .feed-item.goal .min{ color: var(--gold); font-weight:700; }
+  .feed-item.card-y .min{ color: var(--yellow-card); }
+  .feed-item.card-r .min{ color: var(--red-card); }
+
+  .live-actions{ display:flex; justify-content:center; gap: 10px; margin-top: 18px; flex-wrap:wrap; }
+  .speed-row{ display:flex; justify-content:center; gap:8px; margin-top:14px; }
+  .speed-btn{
+    font-family: var(--ff-mono); font-size:11px; padding: 7px 12px; background: var(--bg);
+    color: var(--silver-dim); border:1px solid var(--line); border-radius:5px; cursor:pointer;
+  }
+  .speed-btn.active{ color: var(--gold); border-color: var(--gold); }
+
+  /* ---------- Stats ---------- */
+  .stat-row{ margin-bottom: 14px; }
+  .stat-row .labels{
+    display:flex; justify-content:space-between; font-family: var(--ff-mono); font-size: 12px;
+    color: var(--silver); margin-bottom: 6px;
+  }
+  .stat-row .stat-name{ color: var(--silver-dim); text-transform:uppercase; letter-spacing:0.05em; font-size:10px; align-self:center; }
+  .bar-track{ display:flex; height: 8px; border-radius: 4px; overflow:hidden; background: var(--bg); }
+  .bar-a{ background: var(--violet-bright); }
+  .bar-b{ background: var(--gold); }
+
+  .fulltime-banner{
+    text-align:center; font-family: var(--ff-mono); letter-spacing: 0.2em; font-size: 11px;
+    color: var(--silver-dim); text-transform:uppercase; margin-top: 4px;
+  }
+
+  .pens-row{ display:flex; justify-content:center; gap:6px; margin: 10px 0; flex-wrap:wrap; }
+  .pen-kick{
+    width:22px;height:22px;border-radius:50%; display:flex;align-items:center;justify-content:center;
+    font-size:12px; border:1px solid var(--line); background:var(--bg);
+  }
+  .pen-kick.scored{ background: rgba(228,185,75,0.25); border-color: var(--gold); }
+  .pen-kick.missed{ background: rgba(229,72,77,0.2); border-color: var(--red-card); }
+
+  footer{
+    text-align:center; margin-top: 30px; font-family: var(--ff-mono); font-size: 10px;
+    color: var(--silver-dim); letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">Resmi Olmayan Taraftar Simülatörü</div>
+    <h1>Şampiyonlar <span>Ligi</span></h1>
+    <div class="stars">MAÇ SİMÜLATÖRÜ</div>
+  </header>
+
+  <!-- ============ SETUP SCREEN ============ -->
+  <section id="setupScreen" class="panel">
+    <div class="setup-grid">
+      <div class="team-slot side-a">
+        <div class="crest" id="crestA">RM</div>
+        <select id="teamA" aria-label="Ev sahibi takım"></select>
+        <div class="team-meta" id="metaA"></div>
+      </div>
+      <div class="vs-divider">VS</div>
+      <div class="team-slot side-b">
+        <div class="crest" id="crestB">MC</div>
+        <select id="teamB" aria-label="Deplasman takımı"></select>
+        <div class="team-meta" id="metaB"></div>
+      </div>
+    </div>
+    <div class="team-meta" id="fixtureNote" style="justify-content:center; margin-top:12px;"></div>
+
+    <div class="mode-row">
+      <label class="toggle-label" id="fixturesLabel">
+        <span class="switch on" id="fixturesSwitch"></span>
+        Sadece resmi 2026/27 kura eşleşmeleri
+      </label>
+    </div>
+    <div class="mode-row" style="margin-top:0; padding-top:10px; border-top:none;">
+      <label class="toggle-label" id="knockoutLabel">
+        <span class="switch" id="knockoutSwitch"></span>
+        Eleme maçı — berabere kalınırsa penaltılarla kazanan belirlensin
+      </label>
+    </div>
+    <div class="actions" id="randomFixtureRow">
+      <button class="btn-ghost" id="randomFixtureBtn">🎲 Rastgele Resmi Eşleşme</button>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" id="kickoffBtn">Maçı Başlat</button>
+      <button class="btn-ghost" id="instantBtn">Anında Simüle Et</button>
+    </div>
+    <div class="error-msg" id="errorMsg"></div>
+  </section>
+
+  <!-- ============ LIVE SCREEN ============ -->
+  <section id="liveScreen" class="panel">
+    <div class="scoreboard">
+      <div class="sb-team">
+        <div class="crest-sm" id="liveCrestA">RM</div>
+        <div class="name" id="liveNameA">Real Madrid</div>
+      </div>
+      <div class="sb-mid">
+        <div class="score"><span class="digit" id="scoreA">0</span><span>—</span><span class="digit" id="scoreB">0</span></div>
+        <div class="clock" id="clock"><span class="dot"></span><span id="clockText">0'</span></div>
+      </div>
+      <div class="sb-team">
+        <div class="crest-sm" id="liveCrestB">MC</div>
+        <div class="name" id="liveNameB">Man City</div>
+      </div>
+    </div>
+
+    <div class="timeline-wrap">
+      <div class="timeline-labels"><span>BAŞ</span><span>DA</span><span>MS</span></div>
+      <div class="timeline" id="timeline"><div class="beam" id="beam"></div></div>
+    </div>
+
+    <div class="speed-row" id="speedRow">
+      <button class="speed-btn" data-speed="550">1×</button>
+      <button class="speed-btn active" data-speed="260">2×</button>
+      <button class="speed-btn" data-speed="90">4×</button>
+    </div>
+
+    <div class="feed-title">Canlı Anlatım</div>
+    <div class="feed" id="feed" aria-live="polite"></div>
+
+    <div class="live-actions">
+      <button class="btn-ghost" id="skipBtn">Sonuca Atla</button>
+    </div>
+  </section>
+
+  <!-- ============ RESULT SCREEN ============ -->
+  <section id="resultScreen" class="panel">
+    <div class="fulltime-banner" id="resultBanner">Maç Sonu</div>
+    <div class="scoreboard">
+      <div class="sb-team">
+        <div class="crest-sm" id="resCrestA">RM</div>
+        <div class="name" id="resNameA">Real Madrid</div>
+      </div>
+      <div class="sb-mid">
+        <div class="score"><span id="resScoreA">0</span><span>—</span><span id="resScoreB">0</span></div>
+      </div>
+      <div class="sb-team">
+        <div class="crest-sm" id="resCrestB">MC</div>
+        <div class="name" id="resNameB">Man City</div>
+      </div>
+    </div>
+
+    <div id="pensBlock" style="display:none;">
+      <div class="fulltime-banner">Penaltı Atışları</div>
+      <div class="pens-row" id="pensA"></div>
+      <div class="pens-row" id="pensB"></div>
+    </div>
+
+    <div class="feed-title">Maç İstatistikleri</div>
+    <div id="statsBlock"></div>
+
+    <div class="feed-title">Maç Raporu</div>
+    <div class="feed" id="resultFeed" style="max-height:220px;"></div>
+
+    <div class="actions">
+      <button class="btn-gold" id="rematchBtn">Tekrar Oyna</button>
+      <button class="btn-ghost" id="newMatchBtn">Yeni Maç</button>
+    </div>
+  </section>
+
+  <footer>Simülasyon dereceleri yalnızca oyun amaçlıdır · UEFA ile bağlantılı değildir</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Team data ---------------- */
+  // All 36 clubs confirmed for the 2026/27 UEFA Champions League league phase,
+  // grouped by their actual draw pot (Pot 1 = strongest coefficient, Pot 4 = weakest).
+  // Ratings are simplified simulation inputs (attack/defense out of 99), for entertainment only.
+  const TEAMS = [
+    // Pot 1
+    {name:"Paris Saint-Germain", code:"PSG", atk:95, def:86, pot:1},
+    {name:"Bayern Munich", code:"BAY", atk:94, def:87, pot:1},
+    {name:"Real Madrid", code:"RMA", atk:93, def:85, pot:1},
+    {name:"Liverpool", code:"LIV", atk:90, def:84, pot:1},
+    {name:"Inter Milan", code:"INT", atk:85, def:90, pot:1},
+    {name:"Manchester City", code:"MCI", atk:93, def:87, pot:1},
+    {name:"Arsenal", code:"ARS", atk:87, def:89, pot:1},
+    {name:"FC Barcelona", code:"BAR", atk:92, def:81, pot:1},
+    {name:"Atletico Madrid", code:"ATM", atk:82, def:91, pot:1},
+    // Pot 2
+    {name:"Borussia Dortmund", code:"BVB", atk:86, def:79, pot:2},
+    {name:"AS Roma", code:"ROM", atk:80, def:83, pot:2},
+    {name:"Sporting CP", code:"SCP", atk:82, def:78, pot:2},
+    {name:"Aston Villa", code:"AVL", atk:80, def:82, pot:2},
+    {name:"FC Porto", code:"POR", atk:78, def:80, pot:2},
+    {name:"Manchester United", code:"MUN", atk:81, def:79, pot:2},
+    {name:"Club Brugge", code:"CLB", atk:78, def:77, pot:2},
+    {name:"Real Betis", code:"BET", atk:79, def:76, pot:2},
+    {name:"PSV Eindhoven", code:"PSV", atk:83, def:75, pot:2},
+    // Pot 3
+    {name:"Feyenoord", code:"FEY", atk:77, def:76, pot:3},
+    {name:"Lille", code:"LIL", atk:76, def:78, pot:3},
+    {name:"Napoli", code:"NAP", atk:84, def:83, pot:3},
+    {name:"RB Leipzig", code:"RBL", atk:82, def:80, pot:3},
+    {name:"Villarreal", code:"VIL", atk:80, def:78, pot:3},
+    {name:"Shakhtar Donetsk", code:"SHK", atk:76, def:74, pot:3},
+    {name:"Galatasaray", code:"GAL", atk:79, def:77, pot:3},
+    {name:"Fenerbahce", code:"FEN", atk:78, def:76, pot:3},
+    {name:"Bodo/Glimt", code:"BOD", atk:75, def:72, pot:3},
+    // Pot 4
+    {name:"Slovan Bratislava", code:"SLO", atk:68, def:70, pot:4},
+    {name:"VfB Stuttgart", code:"STU", atk:77, def:74, pot:4},
+    {name:"AEK Athens", code:"AEK", atk:72, def:73, pot:4},
+    {name:"Como", code:"COM", atk:71, def:70, pot:4},
+    {name:"Lens", code:"LEN", atk:75, def:74, pot:4},
+    {name:"Sabah", code:"SAB", atk:64, def:66, pot:4},
+    {name:"LASK", code:"LAS", atk:68, def:70, pot:4},
+    {name:"Slavia Prague", code:"SLP", atk:73, def:75, pot:4},
+    {name:"Viking", code:"VIK", atk:66, def:68, pot:4},
+  ];
+
+  // Official 2026/27 UEFA Champions League league-phase draw pairings, announced 27 August 2026.
+  // Each team's 8 real opponents from the actual draw (two from each pot). Exact match dates and
+  // which side is designated home per UEFA's official fixture list will be confirmed by 29 August 2026 —
+  // this app assigns a default home side for simulation purposes only.
+  const ADJ = {
+    PSG:["BAR","ROM","GAL","SLO","MCI","AVL","VIL","COM"],
+    RMA:["INT","PSV","RBL","LAS","ARS","ROM","SHK","AEK"],
+    MCI:["PSG","SCP","NAP","AEK","BAR","POR","RBL","LEN"],
+    BAY:["ARS","BET","BOD","SLP","ATM","MUN","LIL","VIK"],
+    BAR:["MCI","AVL","FEY","COM","PSG","SCP","GAL","SAB"],
+    LIV:["ATM","POR","VIL","LEN","INT","CLB","FEN","LAS"],
+    INT:["LIV","CLB","SHK","STU","RMA","BVB","FEY","SLO"],
+    BVB:["INT","BET","VIL","AEK","ARS","AVL","BOD","SAB"],
+    ATM:["BAY","MUN","FEN","VIK","LIV","PSV","BOD","STU"],
+    ARS:["RMA","BVB","LIL","SAB","BAY","BET","NAP","SLP"],
+    AVL:["PSG","BVB","FEN","VIK","BAR","CLB","GAL","SLP"],
+    MUN:["BAY","ROM","RBL","SAB","ATM","SCP","VIL","COM"],
+    POR:["MCI","PSV","NAP","SLP","LIV","BET","FEY","LAS"],
+    SCP:["BAR","MUN","GAL","LAS","MCI","ROM","SHK","LEN"],
+    ROM:["RMA","SCP","LIL","SLO","PSG","MUN","FEN","AEK"],
+    PSV:["ATM","CLB","SHK","STU","RMA","POR","RBL","VIK"],
+    BET:["ARS","POR","FEY","COM","BAY","BVB","LIL","SLO"],
+    CLB:["LIV","AVL","BOD","LEN","INT","PSV","NAP","STU"],
+    NAP:["ARS","CLB","BOD","VIK","MCI","POR","VIL","SAB"],
+    LIL:["BAY","BET","GAL","SLO","ARS","ROM","BOD","STU"],
+    FEY:["INT","POR","RBL","COM","BAR","BET","GAL","VIK"],
+    RBL:["MCI","PSV","SHK","LEN","RMA","MUN","FEY","COM"],
+    GAL:["BAR","AVL","FEY","STU","PSG","SCP","LIL","AEK"],
+    SHK:["RMA","SCP","FEN","AEK","INT","PSV","RBL","SLO"],
+    FEN:["LIV","ROM","VIL","SLP","ATM","AVL","SHK","LAS"],
+    VIL:["PSG","MUN","NAP","SAB","LIV","BVB","FEN","SLP"],
+    BOD:["ATM","BVB","LIL","LAS","BAY","CLB","NAP","LEN"],
+    SLP:["ARS","AVL","VIL","LEN","BAY","POR","FEN","SAB"],
+    SLO:["INT","BET","SHK","STU","PSG","ROM","LIL","LAS"],
+    STU:["ATM","CLB","LIL","VIK","INT","PSV","GAL","SLO"],
+    AEK:["RMA","ROM","GAL","LAS","MCI","BVB","SHK","COM"],
+    LAS:["LIV","POR","FEN","SLO","RMA","SCP","BOD","AEK"],
+    COM:["PSG","MUN","RBL","AEK","BAR","BET","FEY","LEN"],
+    LEN:["LIV","CLB","RBL","SLP","MCI","SCP","BOD","COM"],
+    VIK:["BAY","PSV","FEY","SAB","ATM","AVL","NAP","STU"],
+    SAB:["ARS","MUN","VIL","VIK","BAR","BVB","NAP","SLP"],
+  };
+  function idxByCode(code){ return TEAMS.findIndex(t=>t.code===code); }
+
+  /* ---------------- Commentary banks ---------------- */
+  const LINES = {
+    chance: [
+      "{t} break forward but the effort drifts wide!",
+      "Good build-up from {t}, but the final ball lets them down.",
+      "{t} win a corner after some sustained pressure.",
+      "A half-chance for {t} — well blocked by the defence.",
+      "{t} look lively down the flank, but the cross is cut out."
+    ],
+    saved: [
+      "Big save! The keeper denies {t}!",
+      "{t} thought that was in — brilliant stop from the goalkeeper!",
+      "{t} forces a smart save, palmed away for a corner."
+    ],
+    goal: [
+      "GOAL! The No. {n} finds the net for {t}!",
+      "GOAL! {t} take the lead — the No. {n} with a clinical finish!",
+      "GOAL! {t} equalise through the No. {n}!",
+      "GOAL! What a strike from the No. {n} — {t} in dreamland!",
+      "GOAL! The No. {n} taps home from close range for {t}!"
+    ],
+    yellow: [
+      "Yellow card for {t} — a late challenge in midfield.",
+      "{t} pick up a caution after a foul.",
+      "Booking shown to a {t} player for dissent."
+    ],
+    red: [
+      "RED CARD! {t} are down to ten men!",
+      "Sending off! A reckless challenge leaves {t} a man short!"
+    ]
+  };
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function fill(str, teamName, num){ return str.replace("{t}", teamName).replace("{n}", num||""); }
+
+  /* ---------------- State ---------------- */
+  let state = null;
+  let knockout = false;
+  let tickTimer = null;
+  let tickSpeed = 260;
+
+  /* ---------------- DOM refs ---------------- */
+  const $ = id => document.getElementById(id);
+  const setupScreen = $("setupScreen"), liveScreen = $("liveScreen"), resultScreen = $("resultScreen");
+  const teamASel = $("teamA"), teamBSel = $("teamB");
+
+  let fixturesOnly = true;
+
+  function populateSelects(){
+    [teamASel, teamBSel].forEach(sel=>{
+      let currentPot = null, group = null;
+      TEAMS.forEach((t,i)=>{
+        if(t.pot !== currentPot){
+          currentPot = t.pot;
+          group = document.createElement("optgroup");
+          group.label = "Torba " + currentPot;
+          sel.appendChild(group);
+        }
+        const o = document.createElement("option");
+        o.value = i; o.textContent = t.name;
+        group.appendChild(o);
+      });
+    });
+    teamASel.value = 0;   // Paris Saint-Germain
+    teamBSel.value = 4;   // FC Barcelona — a real drawn opponent
+    applyFixtureFilter();
+    refreshMeta();
+  }
+
+  function applyFixtureFilter(){
+    const aTeam = TEAMS[teamASel.value];
+    const allowed = fixturesOnly ? new Set(ADJ[aTeam.code] || []) : null;
+    let firstAllowedValue = null;
+    teamBSel.querySelectorAll("option").forEach(opt=>{
+      const t = TEAMS[parseInt(opt.value,10)];
+      const allow = !fixturesOnly || (t.code !== aTeam.code && allowed.has(t.code));
+      opt.hidden = !allow;
+      opt.disabled = !allow;
+      if(allow && firstAllowedValue === null) firstAllowedValue = opt.value;
+    });
+    if(fixturesOnly){
+      const curT = TEAMS[teamBSel.value];
+      if(!curT || curT.code === aTeam.code || !allowed.has(curT.code)){
+        if(firstAllowedValue !== null) teamBSel.value = firstAllowedValue;
+      }
+    }
+  }
+
+  function updateFixtureNote(){
+    const a = TEAMS[teamASel.value], b = TEAMS[teamBSel.value];
+    const note = $("fixtureNote");
+    if(!a || !b || a.code === b.code){ note.innerHTML = ""; return; }
+    const isReal = (ADJ[a.code] || []).includes(b.code);
+    note.innerHTML = isReal
+      ? `✓ <b>Resmi eşleşme</b> — 2026/27 lig aşaması kurası`
+      : (fixturesOnly ? "" : `Varsayımsal eşleşme — gerçek kurada yok`);
+  }
+
+  function refreshMeta(){
+    const a = TEAMS[teamASel.value], b = TEAMS[teamBSel.value];
+    $("crestA").textContent = a.code.slice(0,2);
+    $("crestB").textContent = b.code.slice(0,2);
+    $("metaA").innerHTML = `HÜC <b>${a.atk}</b> · SAV <b>${a.def}</b>`;
+    $("metaB").innerHTML = `HÜC <b>${b.atk}</b> · SAV <b>${b.def}</b>`;
+    $("errorMsg").textContent = (teamASel.value === teamBSel.value) ? "İki farklı kulüp seçin." : "";
+    updateFixtureNote();
+  }
+  teamASel.addEventListener("change", ()=>{ applyFixtureFilter(); refreshMeta(); });
+  teamBSel.addEventListener("change", refreshMeta);
+
+  $("fixturesSwitch").addEventListener("click", ()=>{
+    fixturesOnly = !fixturesOnly;
+    $("fixturesSwitch").classList.toggle("on", fixturesOnly);
+    $("randomFixtureRow").style.display = fixturesOnly ? "flex" : "none";
+    applyFixtureFilter();
+    refreshMeta();
+  });
+  $("fixturesLabel").addEventListener("click", (e)=>{
+    if(e.target.id !== "fixturesSwitch"){
+      fixturesOnly = !fixturesOnly;
+      $("fixturesSwitch").classList.toggle("on", fixturesOnly);
+      $("randomFixtureRow").style.display = fixturesOnly ? "flex" : "none";
+      applyFixtureFilter();
+      refreshMeta();
+    }
+  });
+
+  $("randomFixtureBtn").addEventListener("click", ()=>{
+    const aIdx = Math.floor(Math.random()*TEAMS.length);
+    const aTeam = TEAMS[aIdx];
+    const opponents = ADJ[aTeam.code] || [];
+    const bCode = opponents[Math.floor(Math.random()*opponents.length)];
+    const bIdx = idxByCode(bCode);
+    teamASel.value = aIdx;
+    applyFixtureFilter();
+    teamBSel.value = bIdx;
+    refreshMeta();
+  });
+
+  $("knockoutSwitch").addEventListener("click", ()=>{
+    knockout = !knockout;
+    $("knockoutSwitch").classList.toggle("on", knockout);
+  });
+  $("knockoutLabel").addEventListener("click", (e)=>{
+    if(e.target.id !== "knockoutSwitch"){
+      knockout = !knockout;
+      $("knockoutSwitch").classList.toggle("on", knockout);
+    }
+  });
+
+  document.querySelectorAll(".speed-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      document.querySelectorAll(".speed-btn").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      tickSpeed = parseInt(btn.dataset.speed,10);
+      if(tickTimer){ clearInterval(tickTimer); scheduleTick(); }
+    });
+  });
+
+  /* ---------------- Match engine ---------------- */
+  function newMatchState(a, b){
+    return {
+      a, b,
+      minute: 0,
+      stoppageHT: 1 + Math.floor(Math.random()*3),
+      stoppageFT: 2 + Math.floor(Math.random()*5),
+      phase: "first", // first | ht | second | done
+      score: {a:0, b:0},
+      shots: {a:0, b:0},
+      onTarget: {a:0, b:0},
+      corners: {a:0, b:0},
+      cards: {a:{y:0,r:0}, b:{y:0,r:0}},
+      possessionBase: {a: 50 + (a.atk-b.atk)*0.15, b: 50 + (b.atk-a.atk)*0.15},
+      events: [], // {minute, type, side}
+      log: []
+    };
+  }
+
+  function effectiveMinuteCap(s){
+    // first half 45+stoppageHT, second half up to 90+stoppageFT
+    return s.phase === "first" ? 45 + (s.minute > 45 ? s.stoppageHT : 0) : 90 + s.stoppageFT;
+  }
+
+  function minuteLabel(s, m){
+    if(m <= 45) return m + "'";
+    if(m <= 45 + s.stoppageHT && s.phase==="first") return "45+" + (m-45) + "'";
+    if(m <= 90) return m + "'";
+    return "90+" + (m-90) + "'";
+  }
+
+  function teamChanceProb(atk, oppDef){
+    const ratio = atk / oppDef;
+    return Math.min(0.115, Math.max(0.02, 0.055 * ratio));
+  }
+
+  function simulateOneMinute(s){
+    s.minute += 1;
+    const m = s.minute;
+    const label = minuteLabel(s, m);
+
+    // half-time transition
+    const htCutoff = 45 + s.stoppageHT;
+    if(s.phase === "first" && m >= htCutoff){
+      s.phase = "second";
+      pushLog(s, htCutoff, "half", "Half-time. Score at the break.", null);
+      return {done:false, halftime:true};
+    }
+    const ftCutoff = 90 + s.stoppageFT;
+    if(s.phase === "second" && m >= ftCutoff){
+      s.phase = "done";
+      pushLog(s, ftCutoff, "full", "Full time! The referee brings the match to a close.", null);
+      return {done:true};
+    }
+
+    ["a","b"].forEach(side=>{
+      const other = side === "a" ? "b" : "a";
+      const team = s[side], opp = s[other];
+
+      // possession drift
+      const drift = (Math.random()-0.5) * 2 + (team.atk-opp.atk)*0.01;
+      s.possessionBase[side] = Math.min(72, Math.max(28, s.possessionBase[side] + drift*0.3));
+
+      const chanceProb = teamChanceProb(team.atk, opp.def) * (m>75?1.1:1); // late-game urgency
+      if(Math.random() < chanceProb){
+        s.shots[side]++;
+        const onTargetProb = 0.42 + (team.atk-opp.def)/400;
+        if(Math.random() < onTargetProb){
+          s.onTarget[side]++;
+          const goalProb = Math.min(0.55, Math.max(0.14, 0.30 + (team.atk-opp.def)/260));
+          if(Math.random() < goalProb){
+            s.score[side]++;
+            const num = 5 + Math.floor(Math.random()*17);
+            pushLog(s, m, "goal", fill(pick(LINES.goal), team.name, num), side);
+          } else {
+            pushLog(s, m, "chance", fill(pick(LINES.saved), team.name), side);
+          }
+        } else {
+          pushLog(s, m, "chance", fill(pick(LINES.chance), team.name), side);
+        }
+      } else if(Math.random() < 0.03){
+        s.corners[side]++;
+      }
+
+      // cards
+      const cardBase = m > 60 ? 0.011 : 0.007;
+      if(Math.random() < cardBase){
+        s.cards[side].y++;
+        pushLog(s, m, "card-y", fill(pick(LINES.yellow), team.name), side);
+      } else if(Math.random() < 0.0012){
+        s.cards[side].r++;
+        pushLog(s, m, "card-r", fill(pick(LINES.red), team.name), side);
+      }
+    });
+
+    return {done:false};
+  }
+
+  function pushLog(s, minute, type, text, side){
+    const entry = {minute, type, text, side, label: minute + "'"};
+    s.log.push(entry);
+    if(type === "goal" || type === "card-y" || type === "card-r"){
+      s.events.push({minute, type, side});
+    }
+    return entry;
+  }
+
+  /* ---------------- Live playback ---------------- */
+  function startLivePlayback(){
+    const a = TEAMS[teamASel.value], b = TEAMS[teamBSel.value];
+    if(teamASel.value === teamBSel.value){ $("errorMsg").textContent = "Choose two different clubs."; return; }
+    state = newMatchState(a,b);
+    setupScreen.style.display = "none";
+    resultScreen.style.display = "none";
+    liveScreen.style.display = "block";
+
+    $("liveCrestA").textContent = a.code.slice(0,2); $("liveNameA").textContent = a.name;
+    $("liveCrestB").textContent = b.code.slice(0,2); $("liveNameB").textContent = b.name;
+    $("scoreA").textContent = "0"; $("scoreB").textContent = "0";
+    $("feed").innerHTML = "";
+    $("beam").style.width = "0%";
+    document.querySelectorAll(".tl-marker").forEach(el=>el.remove());
+    $("clockText").textContent = "0'";
+    $("clock").classList.remove("stopped");
+
+    scheduleTick();
+  }
+
+  function scheduleTick(){
+    tickTimer = setInterval(()=>{
+      const result = simulateOneMinute(state);
+      renderLiveFrame();
+      if(result.done){
+        clearInterval(tickTimer); tickTimer=null;
+        setTimeout(finishMatch, 500);
+      }
+    }, tickSpeed);
+  }
+
+  function renderLiveFrame(){
+    const s = state;
+    // newest log entries not yet rendered
+    const feed = $("feed");
+    const rendered = feed.children.length;
+    for(let i=rendered; i<s.log.length; i++){
+      const entry = s.log[i];
+      if(entry.type === "half" || entry.type === "full"){
+        const div = document.createElement("div");
+        div.className = "feed-item";
+        div.innerHTML = `<span class="min">${entry.minute}'</span><span>${entry.text}</span>`;
+        feed.appendChild(div);
+        continue;
+      }
+      const div = document.createElement("div");
+      div.className = "feed-item " + (entry.type==="goal"?"goal":entry.type==="card-y"?"card-y":entry.type==="card-r"?"card-r":"");
+      const icon = entry.type==="goal" ? "⚽" : entry.type==="card-y" ? "🟨" : entry.type==="card-r" ? "🟥" : "";
+      div.innerHTML = `<span class="min">${entry.minute}'</span><span>${icon?icon+" ":""}${entry.text}</span>`;
+      feed.appendChild(div);
+
+      if(entry.type==="goal" || entry.type==="card-y" || entry.type==="card-r"){
+        addTimelineMarker(entry);
+      }
+    }
+
+    $("scoreA").textContent = s.score.a;
+    $("scoreB").textContent = s.score.b;
+    animatePulseIfChanged();
+
+    const cap = s.phase==="second" ? 90+s.stoppageFT : 45+s.stoppageHT;
+    $("clockText").textContent = minuteLabel(s, s.minute);
+    const pct = Math.min(100, (s.minute / (90+s.stoppageFT)) * 100);
+    $("beam").style.width = pct + "%";
+  }
+
+  let lastScoreA = 0, lastScoreB = 0;
+  function animatePulseIfChanged(){
+    const a = parseInt($("scoreA").textContent,10), b = parseInt($("scoreB").textContent,10);
+    if(a !== lastScoreA){ $("scoreA").classList.remove("pulse"); void $("scoreA").offsetWidth; $("scoreA").classList.add("pulse"); lastScoreA = a; }
+    if(b !== lastScoreB){ $("scoreB").classList.remove("pulse"); void $("scoreB").offsetWidth; $("scoreB").classList.add("pulse"); lastScoreB = b; }
+  }
+
+  function addTimelineMarker(entry){
+    const totalSpan = 90 + state.stoppageFT;
+    const pct = Math.min(100, (entry.minute/totalSpan)*100);
+    const el = document.createElement("div");
+    el.className = "tl-marker " + (entry.side==="a" ? "home":"away");
+    el.style.left = pct + "%";
+    el.textContent = entry.type==="goal" ? "⚽" : entry.type==="card-y" ? "🟨" : "🟥";
+    $("timeline").appendChild(el);
+  }
+
+  $("skipBtn").addEventListener("click", ()=>{
+    if(tickTimer){ clearInterval(tickTimer); tickTimer=null; }
+    while(state.phase !== "done"){ simulateOneMinute(state); }
+    renderLiveFrame();
+    setTimeout(finishMatch, 300);
+  });
+
+  /* ---------------- Instant simulate ---------------- */
+  $("instantBtn").addEventListener("click", ()=>{
+    if(teamASel.value === teamBSel.value){ $("errorMsg").textContent = "Choose two different clubs."; return; }
+    const a = TEAMS[teamASel.value], b = TEAMS[teamBSel.value];
+    state = newMatchState(a,b);
+    while(state.phase !== "done"){ simulateOneMinute(state); }
+    setupScreen.style.display = "none";
+    finishMatch();
+  });
+
+  $("kickoffBtn").addEventListener("click", startLivePlayback);
+
+  /* ---------------- Penalty shootout ---------------- */
+  function runPenalties(s){
+    const probA = Math.min(0.86, Math.max(0.55, 0.62 + (s.a.atk-70)/300));
+    const probB = Math.min(0.86, Math.max(0.55, 0.62 + (s.b.atk-70)/300));
+    const results = {a:[], b:[]};
+    let scoreA=0, scoreB=0, round=0;
+
+    function takeRound(){
+      const kickA = Math.random() < probA;
+      results.a.push(kickA); if(kickA) scoreA++;
+      // sudden death: if after 5 rounds a decisive scenario already happened for A's kick, still let B kick to keep it fair
+      const kickB = Math.random() < probB;
+      results.b.push(kickB); if(kickB) scoreB++;
+      round++;
+    }
+
+    for(let i=0;i<5;i++) takeRound();
+    // sudden death
+    while(scoreA === scoreB && round < 20){
+      takeRound();
+    }
+    // ensure resolved (extremely unlikely edge case fallback)
+    if(scoreA === scoreB){ scoreA += 1; }
+
+    return {results, scoreA, scoreB};
+  }
+
+  /* ---------------- Finish + results ---------------- */
+  function finishMatch(){
+    liveScreen.style.display = "none";
+    resultScreen.style.display = "block";
+    const s = state;
+
+    $("resCrestA").textContent = s.a.code.slice(0,2); $("resNameA").textContent = s.a.name;
+    $("resCrestB").textContent = s.b.code.slice(0,2); $("resNameB").textContent = s.b.name;
+    $("resScoreA").textContent = s.score.a;
+    $("resScoreB").textContent = s.score.b;
+
+    $("pensBlock").style.display = "none";
+    $("resultBanner").textContent = "Full Time";
+
+    if(knockout && s.score.a === s.score.b){
+      const pens = runPenalties(s);
+      $("pensBlock").style.display = "block";
+      $("resultBanner").textContent = "Full Time — Level after 90. Decided on penalties.";
+      renderPens("pensA", pens.results.a);
+      renderPens("pensB", pens.results.b);
+      const winner = pens.scoreA > pens.scoreB ? s.a.name : s.b.name;
+      const line = document.createElement("div");
+      line.style.textAlign="center"; line.style.fontFamily="var(--ff-mono)"; line.style.fontSize="12px";
+      line.style.color="var(--gold)"; line.style.marginTop="6px";
+      line.textContent = `${winner} win the shootout ${Math.max(pens.scoreA,pens.scoreB)}–${Math.min(pens.scoreA,pens.scoreB)} and advance.`;
+      $("pensBlock").appendChild(line);
+    }
+
+    renderStats(s);
+    renderReport(s);
+  }
+
+  function renderPens(id, arr){
+    const el = $(id); el.innerHTML = "";
+    arr.forEach(made=>{
+      const d = document.createElement("div");
+      d.className = "pen-kick " + (made?"scored":"missed");
+      d.textContent = made ? "●" : "✕";
+      el.appendChild(d);
+    });
+  }
+
+  function renderStats(s){
+    const totalPossA = Math.round(s.possessionBase.a);
+    const totalPossB = 100 - totalPossA;
+    const rows = [
+      {label:"Possession", a: totalPossA, b: totalPossB, suffix:"%"},
+      {label:"Shots", a: s.shots.a, b: s.shots.b},
+      {label:"On Target", a: s.onTarget.a, b: s.onTarget.b},
+      {label:"Corners", a: s.corners.a, b: s.corners.b},
+      {label:"Yellow Cards", a: s.cards.a.y, b: s.cards.b.y},
+      {label:"Red Cards", a: s.cards.a.r, b: s.cards.b.r},
+    ];
+    const block = $("statsBlock");
+    block.innerHTML = "";
+    rows.forEach(r=>{
+      const total = (r.a + r.b) || 1;
+      const pctA = (r.a/total)*100;
+      const row = document.createElement("div");
+      row.className = "stat-row";
+      row.innerHTML = `
+        <div class="labels">
+          <span>${r.a}${r.suffix||""}</span>
+          <span class="stat-name">${r.label}</span>
+          <span>${r.b}${r.suffix||""}</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-a" style="width:${pctA}%"></div>
+          <div class="bar-b" style="width:${100-pctA}%"></div>
+        </div>`;
+      block.appendChild(row);
+    });
+  }
+
+  function renderReport(s){
+    const feed = $("resultFeed");
+    feed.innerHTML = "";
+    s.log.forEach(entry=>{
+      const div = document.createElement("div");
+      const cls = entry.type==="goal"?"goal":entry.type==="card-y"?"card-y":entry.type==="card-r"?"card-r":"";
+      div.className = "feed-item " + cls;
+      const icon = entry.type==="goal" ? "⚽" : entry.type==="card-y" ? "🟨" : entry.type==="card-r" ? "🟥" : "";
+      div.innerHTML = `<span class="min">${entry.minute}'</span><span>${icon?icon+" ":""}${entry.text}</span>`;
+      feed.appendChild(div);
+    });
+  }
+
+  /* ---------------- Navigation ---------------- */
+  $("rematchBtn").addEventListener("click", ()=>{
+    resultScreen.style.display = "none";
+    startLivePlayback();
+  });
+  $("newMatchBtn").addEventListener("click", ()=>{
+    resultScreen.style.display = "none";
+    setupScreen.style.display = "block";
+    $("errorMsg").textContent = "";
+  });
+
+  /* ---------------- Init ---------------- */
+  populateSelects();
+})();
+</script>
+</body>
+</html>
